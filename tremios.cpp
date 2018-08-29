@@ -6,30 +6,9 @@
 char cwd[PATH_MAX];
 char *root;
 struct termios oldt,newt;
-	
 using namespace std;
 void mouse(const char*);
 
-void removeSpace(string str,vector<string> &v)
-{
-   string word = "";
-   for (char x : str)
-   {
-       if (x == ' ')
-       {
-           v.push_back(word); 
-           cout<<word;
-           word = "";
-          
-       }
-       else
-       {
-           word = word + x;
-       }
-   } 
-   v.push_back(word);
-
-}
 
 void settingNonConicalMode(){
 	tcgetattr(STDIN_FILENO,&oldt);
@@ -54,8 +33,9 @@ void check(const char *cwd,int m,vector <struct dirent *>&ent){
     stat(ent[m]->d_name, &stat_buf);
     string str=(string(cwd)+"/"+string(ent[m]->d_name));
     	cout<<"\x1B[2J\033[;H";
-    	if(ent[m]->d_type==DT_DIR)
+    	if(ent[m]->d_type==DT_DIR){
     	mouse(str.c_str());
+    }
     	else{
     	 pid_t pro;
     	 pro=fork();
@@ -74,35 +54,74 @@ void check(const char *cwd,int m,vector <struct dirent *>&ent){
   	//closedir (dir);
   	//chdir("..");
 } 
-//else {
- // perror ("");
-//}
-
-//}*/
 void commandMode(const char*  path){
-	/*map <string,int> m;
-	m.insert({":copy" , 0});
-    m.insert({":move" , 1});
-    m.insert({":rename" , 2});
-    m.insert({":create_file ", 3});
-    m.insert({":create_dir" , 4 });
-    m.insert({":delete_file" , 5}); 
-    m.insert({":delete_dir" , 6 });
-    m.insert({":goto_dir" , 7 });
-    m.insert({":search" , 8 });
-    m.insert({":snapshot" , 9 });
-	*/struct winsize size;
+	map <string,int> m;
+	m.insert(make_pair(":copy" , 0));
+    m.insert(make_pair(":move" , 1));
+    m.insert(make_pair(":rename" , 2));
+    m.insert(make_pair(":create_file", 3));
+    m.insert(make_pair(":create_dir" , 4 ));
+    m.insert(make_pair(":delete_file" , 5)); 
+    m.insert(make_pair(":delete_dir" , 6 ));
+    m.insert(make_pair(":goto" , 7 ));
+    m.insert(make_pair(":search" , 8 ));
+    m.insert(make_pair(":snapshot" , 9 ));
+	struct winsize size;
 	ioctl(STDOUT_FILENO,TIOCGWINSZ,&size);
 	int console_size = size.ws_row;
-	cout << "\x1B["<<console_size<<";1H";
+	cout << "\x1B["<<console_size-1<<";1H";
 	settingConicalMode();
 	string str;
-	cin>>str;
 	while(str!=";"){
-	cin>>str;
+	getline(cin,str);
+	vector<string> v;
+	removeSpace(str,v);
+	//auto x =m.find(v[0]);
+	//cout<<v[0];
+	if(m.find(v[0])!=m.end()){
+	switch(m[v[0]]){
+		case 0: //cout<<"Copy File";
+				copyFile(path,v);
+				break;
+		case 1: //cout<<"Move File";
+				moveFile(path,v);
+				break;
+		case 2: //cout<<"Rename";
+				renameFile(path,v);
+				break;
+		case 3: //cout<<"create file";
+				//cout<<v.size()<<v[1]<<" "<<v[2]; 
+				createFile(path,v);
+				break;
+		case 4: //cout<<"create_dir";
+				createFolder(path,v);
+				break;
+		case 5: //cout<<"delete_file";
+				formatChanging(v);
+				removeFile(path,v);
+				break;				 		
+		case 6: //cout<<"delete_dir";
+				formatChanging(v);
+				removeFolder(path,v);
+				break;
+		case 7: cout<<"goto";
+
+				break;
+		case 8: cout<<"search";
+				
+				break;
+		case 9: cout<<"snapshot";
+				
+				break;
+		default : cout<<"Command Doesn't exists";		
+		}
+	}
+	cout << "\x1B["<<console_size-1<<";1H";
+	cout<<"\033[2K";
+
 	}
 	settingNonConicalMode();
-	char ch =getchar();
+	//char ch =getchar();
 	cout << "\x1B[2J\033[;H";	
 	mouse(path);
 }

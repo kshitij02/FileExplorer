@@ -1,8 +1,8 @@
-#include <bits/stdc++.h>
-#include <unistd.h>
 
 #ifndef INC_FUNCTION_H
 #define INC_FUNCTION_H
+#include <bits/stdc++.h>
+#include <unistd.h>
 #include <string.h>
 #include <map>
 #include <vector>
@@ -21,29 +21,32 @@
 #include <bits/stdc++.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stack>
 #include<termios.h>
 
 using namespace std;
 
 
 
-void createFile(char *, char * );
-void createFolder(char * , char *);
+void createFile(const char*,vector<string> &);
+void createFolder(const char*,vector<string> &);
 void copyDirector(const char *,const char *);
-void copyFile(int , char **);
+void copyFile(const char * , vector <string>&);
 string filetype(struct stat );
 string premission(struct stat );
 void printFileDetails(const char* );
 void moveDirector(const char *,const char *);
-void moveFile(int  , char **);
-void removeFile(char *, char *);
+void moveFile(const char * , vector <string>&);
+void removeFile(const char*,vector<string> &);
 void removeSubFoldersFiles(const char *);
-void removeFolder(char * , char *);
-void renameFile(char * , char * ,char *);
+void removeFolder(const char*,vector<string> &);
+void renameFile(const char *path ,vector<string> &);
 void searchFile(const char * , char *);
 void printSnapShot(const char* );
 void gotoloc(const char* s,vector<struct dirent *>& );
 void prints(vector <struct dirent *>&, const char*,int ,int);
+void formatChanging(vector<string> &);
+void removeSpace(string &,vector<string> &);
 
 
 
