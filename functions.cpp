@@ -578,7 +578,7 @@ else {
 }
 
 //Search Recurively for a file / folder in Given Directory
-void searchFile(const char *path , char *fileName){
+void searchFile(const char *path , const char *fileName){
   DIR *dir;
   struct dirent *ent;
   int flag=0;
@@ -608,7 +608,7 @@ else {
 }
 
 //Snapshots Directory (ls -R) 
-void printSnapShot(const char* s){
+void printSnapShot(const char* s,string &strSnap){
 
   DIR *dir;
   struct dirent *ent;
@@ -624,14 +624,13 @@ void printSnapShot(const char* s){
     stat(ent->d_name, &stat_buf);
     if(ent->d_name[0] != '.' ){
     if (S_ISDIR(stat_buf.st_mode)){
-      cout<<ent->d_name<<":\n";
     string str =string(ent->d_name);
-     str=string(s)+'/'+str;
+    strSnap=strSnap+str+"\n";
     const char *cstr = (str.c_str());
-    printSnapShot(cstr);
+    printSnapShot(cstr,strSnap);
     chdir(".."); }
     else{
-      cout<<ent->d_name<<"\n";
+      strSnap=strSnap+string(ent->d_name)+"\n";
     }
    } 
     ent = readdir (dir);

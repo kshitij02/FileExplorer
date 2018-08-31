@@ -3,7 +3,8 @@
 #include <sys/ioctl.h>
 #include "functions.h"
 
-
+stack <string> back_dir;
+stack <string> forward_dir;
 char cwd[PATH_MAX];
 char *root;
 int console_size;
@@ -37,6 +38,7 @@ void check(const char *cwd,int m,vector <struct dirent *>&ent){
     string str=(string(cwd)+"/"+string(ent[m]->d_name));
     	cout<<"\x1B[2J\033[;H";
     	if(ent[m]->d_type==DT_DIR){
+    	back_dir.push(string(cwd));
     	mouse(str.c_str());
     }
     	else{
@@ -57,6 +59,15 @@ void check(const char *cwd,int m,vector <struct dirent *>&ent){
   	//closedir (dir);
   	//chdir("..");
 } 
+void snapFile(const char* path ,string &strSnap){
+	chdir(path);
+	ofstream snapFile;
+	string fileName = string(path)+"/snapShot.txt";
+  	snapFile.open (fileName.c_str());
+  	snapFile << strSnap;
+  	snapFile.close();
+  	chdir("..");
+}
 int breakCheck(char ch){
 	if(ch==27)
 		return 0;
@@ -82,6 +93,7 @@ void commandMode(const char*  path){
 
 	while(1){
 	vector<string> v;
+	int searchFlag=1;
 	string str="";
 	char s;
 	cin>>s;
@@ -150,28 +162,37 @@ void commandMode(const char*  path){
 				formatChanging(v);
 				removeFolder(path,v);
 				break;
-		case 7: cout<<"goto";
+		case 7: //cout<<"goto";
+				path =v[1].c_str();	
+				strcpy(cwd,v[1].c_str()); 
+				cout << "\x1B[2J\033[;H";
+				mouse(cwd);	
+				break;
 
+		case 8:	cout << "\x1B[2J\033[;H";
+				searchFile(cwd,v[1].c_str());
+				searchFlag=0;
 				break;
-		case 8: cout<<"search";
-				
+		case 9: // cout<<"snapshot";
+				string strSnap="";
+				printSnapShot(v[1].c_str(),strSnap);
+				snapFile(v[1].c_str(),strSnap);
 				break;
-		case 9: cout<<"snapshot";
-				
-				break;
-		default : cout<<"Command Doesn't exists";		
+	//	default : cout<<"Command Doesn't exists";		
 		}
+		if(searchFlag){
 		cout << "\x1B[2J\033[;H";
-		gotoloc(cwd,en);
-		prints(en,cwd,0,console_size-5,console_width);		
+		gotoloc(path,en);
+		prints(en,path,0,console_size-5,console_width);
+		}		
 		cout << "\x1B["<<console_size-1<<";1H:";
-
+		//cout<<v[1];
 	}
 	else{
 
 		cout << "\x1B[2J\033[;H";
-		gotoloc(cwd,en);
-		prints(en,cwd,0,console_size-5,console_width);
+		gotoloc(path,en);
+		prints(en,path,0,console_size-5,console_width);
 		cout << "\x1B["<<console_size-1<<";1H";
 		cout<<"\033[2K";
 		cout << "\x1B["<<console_size-2<<";1H";
@@ -255,19 +276,31 @@ void mouse(const char* cwd){
 			cout<<"\x1B[2J\033[;H";
 			mouse(root);
 		}
-		if(c==';'){
+		if(c==':'){
 			commandMode(cwd );
 		//	cout << "\x1B[2J\033[;H";
+			//ent.resize(0);
+			//gotoloc(cwd,ent);
+			//top=0;
+			//end_mouse-1=0;
 			prints(ent,cwd,top,end_mouse-1,console_width);
 		}
 		if(c==127){
 			mouse((string(cwd)+"/"+"..").c_str());
 		}
-		if(c==68){
-			cout<<"back";
+		if(c==68 && back_dir.size()>1 ){
+			//cout<<"back";
+			string s1=back_dir.top();
+			forward_dir.push(s1);
+			cwd=s1.c_str();
+			mouse(cwd);
 		}
-		if(c==67){
-			cout<<"forward";
+		if(c==67 && forward_dir.size()!=0){
+			//cout<<"forward";
+			string s1 = forward_dir.top();
+			back_dir.push(s1);
+			cwd=s1.c_str();
+			mouse(cwd);
 		}
 	}
 
@@ -278,6 +311,7 @@ int main()
 {	settingNonConicalMode();
 	getcwd( cwd, PATH_MAX );
   	root=cwd;
+  	back_dir.push(root);
 	cout << "\x1B[2J";
 	cout << "\x1B[1;1H";
 	cout<<"\e[3h";
