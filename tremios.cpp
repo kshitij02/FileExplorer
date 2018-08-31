@@ -3,8 +3,11 @@
 #include <sys/ioctl.h>
 #include "functions.h"
 
+
 char cwd[PATH_MAX];
 char *root;
+int console_size;
+int console_width;
 struct termios oldt,newt;
 using namespace std;
 void mouse(const char*);
@@ -54,31 +57,74 @@ void check(const char *cwd,int m,vector <struct dirent *>&ent){
   	//closedir (dir);
   	//chdir("..");
 } 
+int breakCheck(char ch){
+	if(ch==27)
+		return 0;
+	return 1;
+}
 void commandMode(const char*  path){
 	map <string,int> m;
-	m.insert(make_pair(":copy" , 0));
-    m.insert(make_pair(":move" , 1));
-    m.insert(make_pair(":rename" , 2));
-    m.insert(make_pair(":create_file", 3));
-    m.insert(make_pair(":create_dir" , 4 ));
-    m.insert(make_pair(":delete_file" , 5)); 
-    m.insert(make_pair(":delete_dir" , 6 ));
-    m.insert(make_pair(":goto" , 7 ));
-    m.insert(make_pair(":search" , 8 ));
-    m.insert(make_pair(":snapshot" , 9 ));
+	m.insert(make_pair("copy" , 0));
+    m.insert(make_pair("move" , 1));
+    m.insert(make_pair("rename" , 2));
+    m.insert(make_pair("create_file", 3));
+    m.insert(make_pair("create_dir" , 4 ));
+    m.insert(make_pair("delete_file" , 5)); 
+    m.insert(make_pair("delete_dir" , 6 ));
+    m.insert(make_pair("goto" , 7 ));
+    m.insert(make_pair("search" , 8 ));
+    m.insert(make_pair("snapshot" , 9 ));
 	struct winsize size;
 	ioctl(STDOUT_FILENO,TIOCGWINSZ,&size);
-	int console_size = size.ws_row;
-	cout << "\x1B["<<console_size-1<<";1H";
-	settingConicalMode();
-	string str;
-	while(str!=";"){
-	getline(cin,str);
+	console_size = size.ws_row;
+	cout << "\x1B["<<console_size-1<<";1H:";
+//	settingConicalMode();
+
+	while(1){
 	vector<string> v;
+	string str="";
+	char s;
+	cin>>s;
+	//cout<<s;
+	if(s==27){
+		break;
+	}
+	char ch;
+	str=s;
+	cout<<str;
+    while(1){
+    	ch=getchar();
+    	if(breakCheck(ch) && ch!=10 && ch!=127){
+    		cout<<ch;
+    		str=str+ch;
+    		//cout<<str;
+    	}
+    	else if(ch==127){
+    		int n=str.length();
+    		str=str.substr(0,n-1);
+    		cout<<"\033[2K";
+    		cout << "\x1B["<<console_size-1<<";1H";	    
+    	    cout<<":"<<str;	
+    	}
+    	else break;
+    }
+    //cout<<str;
+    if(ch==27){
+    	break;
+    }
 	removeSpace(str,v);
 	//auto x =m.find(v[0]);
 	//cout<<v[0];
+	cout << "\x1B["<<console_size-1<<";1H";
+	cout<<"\033[2K";
+	cout << "\x1B["<<console_size-2<<";1H";
+	cout<<"\033[2K";
+	cout << "\x1B["<<console_size<<";1H";
+	vector <struct dirent *> en;
+		
+
 	if(m.find(v[0])!=m.end()){
+	
 	switch(m[v[0]]){
 		case 0: //cout<<"Copy File";
 				copyFile(path,v);
@@ -115,12 +161,30 @@ void commandMode(const char*  path){
 				break;
 		default : cout<<"Command Doesn't exists";		
 		}
-	}
-	cout << "\x1B["<<console_size-1<<";1H";
-	cout<<"\033[2K";
+		cout << "\x1B[2J\033[;H";
+		gotoloc(cwd,en);
+		prints(en,cwd,0,console_size-5,console_width);		
+		cout << "\x1B["<<console_size-1<<";1H:";
 
 	}
-	settingNonConicalMode();
+	else{
+
+		cout << "\x1B[2J\033[;H";
+		gotoloc(cwd,en);
+		prints(en,cwd,0,console_size-5,console_width);
+		cout << "\x1B["<<console_size-1<<";1H";
+		cout<<"\033[2K";
+		cout << "\x1B["<<console_size-2<<";1H";
+		cout<<"\033[2K";
+		cout << "\x1B["<<console_size<<";1H";
+		cout<<"Invalid Command";
+		cout << "\x1B["<<console_size-1<<";1H:";
+		
+	}
+	
+	
+	}
+	//settingNonConicalMode();
 	//char ch =getchar();
 	cout << "\x1B[2J\033[;H";	
 	mouse(path);
@@ -129,11 +193,12 @@ void mouse(const char* cwd){
 	int m=0,flag=1;
 	struct winsize size;
 	ioctl(STDOUT_FILENO,TIOCGWINSZ,&size);
-	int console_size = size.ws_row;
+	console_size = size.ws_row;
+	console_width =size.ws_col;
 	cout << "\x1B[2J";
 	vector <struct dirent *> ent;
 	gotoloc(cwd,ent);
-	prints(ent,cwd,0,console_size-5);
+	prints(ent,cwd,0,console_size-5,console_width);
 	//cout<<ent.size()<<endl;
 	//for(int i=0;i<ent.size();i++)
 	//	cout<<ent[i]->d_name<<endl;
@@ -159,7 +224,7 @@ void mouse(const char* cwd){
 				end_mouse--;
 				cout << "\x1B[2J\033[;H";
 				cout << "\x1B[1;1H";
-				prints(ent,cwd,top,end_mouse-1);
+				prints(ent,cwd,top,end_mouse-1,console_width);
 				cout << "\x1B[1;1H";
 			}
 		}
@@ -176,7 +241,7 @@ void mouse(const char* cwd){
 				end_mouse++;
 				cout << "\x1B[2J\033[;H";
 				cout << "\x1B[1;1H";
-				prints(ent,cwd,top,end_mouse-1);
+				prints(ent,cwd,top,end_mouse-1,console_width);
 				cout<< "\x1B["<<et<<";1H";
 			}
 		}
@@ -191,12 +256,18 @@ void mouse(const char* cwd){
 			mouse(root);
 		}
 		if(c==';'){
-			commandMode(cwd);
+			commandMode(cwd );
 		//	cout << "\x1B[2J\033[;H";
-			prints(ent,cwd,top,end_mouse-1);
+			prints(ent,cwd,top,end_mouse-1,console_width);
 		}
 		if(c==127){
 			mouse((string(cwd)+"/"+"..").c_str());
+		}
+		if(c==68){
+			cout<<"back";
+		}
+		if(c==67){
+			cout<<"forward";
 		}
 	}
 

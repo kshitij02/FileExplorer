@@ -1,6 +1,8 @@
 
 #ifndef INC_FUNCTION_H
 #define INC_FUNCTION_H
+#include <sys/types.h>
+#include <pwd.h>
 #include <bits/stdc++.h>
 #include <unistd.h>
 #include <string.h>
@@ -44,7 +46,7 @@ void renameFile(const char *path ,vector<string> &);
 void searchFile(const char * , char *);
 void printSnapShot(const char* );
 void gotoloc(const char* s,vector<struct dirent *>& );
-void prints(vector <struct dirent *>&, const char*,int ,int);
+void prints(vector <struct dirent *>&, const char*,int ,int,int);
 void formatChanging(vector<string> &);
 void removeSpace(string &,vector<string> &);
 
