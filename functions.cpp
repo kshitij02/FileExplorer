@@ -6,7 +6,7 @@ void setRoot(string &root){
 //Relative to Absolute
 string realtiveToAbsolute(string abs_path){
   string z;
-  if(abs_path[0]=='~')
+  if(abs_path[0]=='~'||abs_path[0]=='.')
   z=root1+abs_path.substr(1);
   else
     z=abs_path;
@@ -56,16 +56,10 @@ string createFolder(const char *path , vector<string> &v){
   int flag=0;
   const char *folderName =v[1].c_str();
   const char *des_path;
+  string z;
   string res;
-  string s=v[2];
-    string z="";
-   if(s[0]=='~'){
-      z=root1+v[2].substr(1);
-      des_path=z.c_str();
-    }
-   else{
-    des_path=v[2].c_str();
-   } 
+  z=realtiveToAbsolute(v[2]);
+  des_path=z.c_str();
   if ((dir = opendir (des_path)) != NULL) {
     ent = readdir (dir);
     chdir(des_path);
