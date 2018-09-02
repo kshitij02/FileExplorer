@@ -29,22 +29,23 @@
 using namespace std;
 
 
-
-void createFile(const char*,vector<string> &);
-void createFolder(const char*,vector<string> &);
+void setRoot(string &);
+string realtiveToAbsolute(string);
+string createFile(const char*,vector<string> &);
+string createFolder(const char*,vector<string> &);
 void copyDirector(const char *,const char *);
-void copyFile(const char * , vector <string>&);
+string copyFile(const char * , vector <string>&);
 string filetype(struct stat );
 string premission(struct stat );
 void printFileDetails(const char* );
 void moveDirector(const char *,const char *);
-void moveFile(const char * , vector <string>&);
-void removeFile(const char*,vector<string> &);
+string moveFile(const char * , vector <string>&);
+string removeFile(const char*,vector<string> &);
 void removeSubFoldersFiles(const char *);
-void removeFolder(const char*,vector<string> &);
-void renameFile(const char *path ,vector<string> &);
+string removeFolder(const char*,vector<string> &);
+string renameFile(const char *path ,vector<string> &);
 void searchFile(const char * , const char *);
-void printSnapShot(const char* ,string &);
+int printSnapShot(const char* ,string &);
 void gotoloc(const char* s,vector<struct dirent *>& );
 void prints(vector <struct dirent *>&, const char*,int ,int,int);
 void formatChanging(vector<string> &);
