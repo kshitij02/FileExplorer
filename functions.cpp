@@ -1,5 +1,6 @@
 #include "functions.h"
 string root1;
+vector <string> snap;
 void setRoot(string &root){
   root1=root;
 }
@@ -135,10 +136,8 @@ string copyFile(const char* sou_path, vector<string>& fileFrom ){
   DIR *dir_s,*dir_d;
   string res;
   int arrg=fileFrom.size();
-  struct dirent *ent;
   string des = realtiveToAbsolute( fileFrom[arrg-1]);
   const char *des_path = des.c_str();
-  //return des_path;
   int flag_from=0,flag_to=0,i;
   if ((dir_d = opendir (des_path)) == NULL) {
     return "Destination Directory doesn't exists";
@@ -146,31 +145,30 @@ string copyFile(const char* sou_path, vector<string>& fileFrom ){
   if ((dir_s = opendir (sou_path))!= NULL) {
   for(i=1;i<arrg-1;i++){
     int flag_dir=0;
-    const char *file=fileFrom[i].c_str();
-    ent = readdir (dir_s);
+    string file=fileFrom[i];
+    struct dirent *ent  = readdir (dir_s);
     chdir(sou_path);
     while ((ent) != NULL) { 
 
-      if(strcmp(ent->d_name,file)==0){
+      if(strcmp(ent->d_name,file.c_str())==0){
         flag_from=1;
-        struct stat stat_buf;
-        stat(ent->d_name,&stat_buf);
-        if (S_ISDIR(stat_buf.st_mode)){
+        if (ent->d_type=DT_DIR){
           flag_dir=1;
-     }
-    }
+          break;
+        }
+      }
     ent = readdir (dir_s);
   }
   if(!flag_from){
     return "Source File doesn't exists ";
   }
   if((flag_from)){
-    string str_file_from = string(sou_path)+"/" + string(file);
-    string str_file_to = string(des_path)+"/" + string(file);
+    string str_file_from = string(sou_path)+"/" + file;
+    string str_file_to = string(des_path)+"/" + file;
     if(!flag_dir){
     //cout<<str_file_from<<"copied to "<<str_file_to;
-    fstream file; 
-    file.open(str_file_to.c_str(),ios::out|ios_base::binary);
+    fstream fileW; 
+    fileW.open(str_file_to.c_str(),ios::out|ios_base::binary);
     ifstream in(str_file_from.c_str(),ios_base::in | ios_base::binary); 
     std::ofstream out(str_file_to.c_str(),ios_base::out | ios_base::binary);
 
@@ -184,6 +182,7 @@ string copyFile(const char* sou_path, vector<string>& fileFrom ){
    out.close();
   }
   else{
+   // res=res+str_file_to;
     mkdir(str_file_to.c_str(),S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     copyDirector(str_file_from.c_str(),str_file_to.c_str());
   }
@@ -192,12 +191,12 @@ string copyFile(const char* sou_path, vector<string>& fileFrom ){
  }
 }
 else {
-  perror ("");
+  return "Source File doesn't exists ";
 }
   
   closedir(dir_s);
   closedir(dir_d);
-  return "Copying Completed";
+  return "Copy Completed";
   
 }
 //Determines File Type
@@ -232,48 +231,13 @@ string premission(struct stat stat_buf){
     res+="-";  
     return res;
 }
-//Prints Directory Detials ls
-void printFileDetails(const char* s){
-
-  DIR *dir;
-  struct dirent *ent;
-
-  //const char *s= "/home/ksh/Desktop/sem1/os";
-  if ((dir = opendir (s)) != NULL) {
-    ent = readdir (dir);
-  while ((ent) != NULL) {
-    int flag=0;
-    struct stat stat_buf;
-    stat(ent->d_name, &stat_buf);
-    //printf("%-10s",ent->d_name);
-    //printf("%-10s",premission(stat_buf));
-    //printf("%-2s",filetype(stat_buf));  
-    if(ent->d_name[0] == '.' )
-      flag=1;
-    if(flag==0)   
-    cout<<stat_buf.st_size<<":";
-    struct group *grp = getgrgid( stat_buf.st_gid);
-    cout<<grp->gr_name<<":";
-    cout<<ctime(&stat_buf.st_mtime);
-    ent = readdir (dir);
-  }
-
-  closedir (dir);
-} 
-else {
-  perror ("");
-}
-}
 
 
 //Goto Function 
 void gotoloc(const char* s,vector<struct dirent *>& ent){
 
   DIR *dir;
-  //vector<struct dirent *>ent;
   struct dirent *e;
-
-  //const char *s= "/home/ksh/Desktop/sem1/os";
   if ((dir = opendir (s)) != NULL) {
     chdir(s);
     e=readdir (dir);
@@ -287,7 +251,6 @@ void gotoloc(const char* s,vector<struct dirent *>& ent){
 else {
   perror ("");
 }
-//return ent;
 }
 //prints directory 
 void prints(vector <struct dirent *>& ent,const char* s,int start ,int end,int window_size){
@@ -301,7 +264,6 @@ if ((dir = opendir (s)) != NULL) {
   if(window_size>30){
   string pre=premission(stat_buf);
   cout<<" "<<pre;
-  //printf("%10s",pre);
   string type = filetype(stat_buf);
   cout<<type<<" ";}
   if(window_size>45){
@@ -329,6 +291,8 @@ closedir(dir);
 void moveDirector(const char *sou_path,const char *des_path){
   DIR *dir_s,*dir_d;
   struct dirent *ent;
+  char *par ="..";
+  char *cur =".";
   if ((dir_d = opendir (des_path)) != NULL && (dir_s = opendir (sou_path)) != NULL) {
     ent = readdir (dir_s);
     chdir(sou_path);
@@ -337,12 +301,12 @@ void moveDirector(const char *sou_path,const char *des_path){
         stat(ent->d_name,&stat_buf);
         string str_file_from = string(sou_path)+"/" + string(ent->d_name);
         string str_file_to = string(des_path)+"/" + string(ent->d_name);
-        if (S_ISDIR(stat_buf.st_mode) && ent->d_name[0]!='.'){
+        if ((ent->d_type==DT_DIR )&& (strcmp(ent->d_name,cur)!=0) && (strcmp(ent->d_name,par)!=0)){
           mkdir(str_file_to.c_str(),S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
           moveDirector(str_file_from.c_str(),str_file_to.c_str());
           rmdir(str_file_from.c_str());
         }
-        else if(ent->d_name[0]!='.'){
+        else if(strcmp(ent->d_name,par)!=0 && strcmp(ent->d_name,cur)!=0){
         fstream file; 
         file.open(str_file_to.c_str(),ios::out|ios_base::binary);
         ifstream in(str_file_from.c_str(),ios_base::in | ios_base::binary); 
@@ -375,6 +339,7 @@ string moveFile(const char* sou_path, vector<string>& fileFrom ){
   int arrg = fileFrom.size();
   struct dirent *ent;
   string des= fileFrom[arrg-1];
+  des=realtiveToAbsolute(des);
   const char *des_path = des.c_str();
   int flag_from=0,flag_to=0,i;
   if ((dir_d = opendir (des_path)) == NULL) {
@@ -390,9 +355,7 @@ string moveFile(const char* sou_path, vector<string>& fileFrom ){
 
       if(strcmp(ent->d_name,file)==0){
         flag_from=1;
-        struct stat stat_buf;
-        stat(ent->d_name,&stat_buf);
-        if (S_ISDIR(stat_buf.st_mode)){
+        if (ent->d_type==DT_DIR){
           flag_dir=1;
      }
       }
@@ -405,7 +368,6 @@ string moveFile(const char* sou_path, vector<string>& fileFrom ){
     string str_file_from = string(sou_path)+"/" + string(file);
     string str_file_to = string(des_path)+"/" + string(file);
     if(!flag_dir){
-    //cout<<str_file_from<<"copied to "<<str_file_to;
     fstream file; 
     file.open(str_file_to.c_str(),ios::out|ios_base::binary);
     ifstream in(str_file_from.c_str(),ios_base::in | ios_base::binary); 
@@ -432,7 +394,7 @@ res="Move Completed";
  }
 }
 else {
-  perror ("");
+  res="Source File doesn't exists ";
 }
  closedir(dir_s);
  closedir(dir_d);
@@ -448,8 +410,6 @@ string removeFile(const char *path , vector <string> &v){
    const char *des_path;
    string des=realtiveToAbsolute(v[1]);
    des_path=des.c_str();
-  if(des_path[0]!='.' ||des_path[0]!='~'|| des_path[0]!='/' )
-    return "Invaild Path";
   if ((dir = opendir (des_path)) != NULL) {
     ent = readdir (dir);
     chdir(des_path);
@@ -492,14 +452,14 @@ void removeSubFoldersFiles(const char *path){
     while ((ent) != NULL) {
     struct stat stat_buf;
     stat(ent->d_name, &stat_buf);
-    if(ent->d_name[0]!='.'){
+    char *par ="..";
+    char *cur=".";
+    if(strcmp(ent->d_name,par)!=0 && strcmp(ent->d_name,cur)!=0){
     string str=string(path)+"/"+string(ent->d_name); 
       if (S_ISDIR(stat_buf.st_mode)){
-      //cout<<"Removing "<<str;
       removeSubFoldersFiles(str.c_str());
       rmdir(str.c_str());
       } else{
-      //cout<<"file removed"<<str;
       remove(str.c_str());
       }
     }
@@ -536,21 +496,21 @@ string removeFolder(const char *path , vector <string> &v){
 		res="Folder doesn't exists";
 	}
 	else{
-   // cout<<"starting \n";
-		string str = string(des_path)+"/" + string(fileName);
+  	string str = string(des_path)+"/" + string(fileName);
     const char *cstr =str.c_str();
     removeSubFoldersFiles(cstr);		
     rmdir(str.c_str());
 		res="Folder removed";
 	}
 	chdir("..");
+  closedir(dir);
+
  }
 
 else {
   res="Invaild Path";
 }
 
- closedir(dir);
  return res;
 }
 
@@ -576,19 +536,18 @@ string renameFile(const char *path ,vector<string> &v){
 		res="File doesn't exists ";
 	}
 	else{
-		//string str = string(path)+"/" + string(fileName);
 		rename(fileOldName,fileNewName);
 		res="File renamed";
 	}
 	chdir("..");
+  closedir(dir);
+ 
  }
 
 else {
   perror ("");
 }
-
- closedir(dir);
- return res;
+return res;
 }
 
 //Search Recurively for a file / folder in Given Directory
@@ -626,45 +585,47 @@ int printSnapShot(const char* s,string &strSnap){
 
   DIR *dir;
   struct dirent *ent;
-
-
-  if ((dir = opendir (s)) != NULL) {
+  snap.push_back(string(s));
+  int i=0;
+  if((dir = opendir (snap[i].c_str()))==NULL){
+  return 0;
+  }
+  while(i<snap.size()){
+    strSnap=strSnap+snap[i]+":\n";
+  if ((dir = opendir (snap[i].c_str())) != NULL) {
     ent = readdir (dir);
- 
-  chdir(s);
-  while ((ent) != NULL) {
+    chdir(snap[i].c_str());
+    while ((ent) != NULL) {
     int flag=0;
     struct stat stat_buf;
     stat(ent->d_name, &stat_buf);
     if(ent->d_name[0] != '.' ){
-    if (S_ISDIR(stat_buf.st_mode)){
-    string str =string(ent->d_name);
-    strSnap=strSnap+str+"\n";
-    const char *cstr = (str.c_str());
-    printSnapShot(cstr,strSnap);
-    chdir(".."); }
-    else{
-      strSnap=strSnap+string(ent->d_name)+"\n";
-    }
-   } 
+      if (S_ISDIR(stat_buf.st_mode)){
+      string str;
+      str = snap[i]+"/"+string(ent->d_name);
+      snap.push_back(str);
+      strSnap=strSnap+string(ent->d_name)+"\t";
+      }
+      else {
+      strSnap=strSnap+string(ent->d_name)+"\t";
+      }
+    } 
     ent = readdir (dir);
+    }
+    closedir (dir);
+    strSnap+="\n";
   }
-
-  closedir (dir);
+  i++;
+}
+  snap.resize(0);
   return 1;
 } 
-else {
-  return 0;
-}
-}
 void formatChanging(vector<string> &v){
   int i;
   string str=v[1];
-  //cout<<str;
   for(i=str.length()-1;str[i]!='/';i--);
   if(i>=0){
   string str1=str.substr(0,i);
-  //cout<<str1;
   v.pop_back();
   v.push_back(str1);
   str1=str.substr(i+1);
@@ -676,7 +637,6 @@ void removeSpace(string &s , vector<string> &v){
   for(int i=0;i<s.length();i++){
     if(s[i]==' '){
       v.push_back(word);
-  //    cout<<word<<endl;
       word="";
     }
     else{

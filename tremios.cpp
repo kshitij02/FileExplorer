@@ -159,7 +159,8 @@ void commandMode(const char*  path){
 				}
 				break;
 		case 3: //create File
-				if(v.size()==3)
+				v[2]=realtiveToAbsolute(v[2]);
+				if(v.size()==3 && v[2].find(root) != string::npos)
 				res=createFile(path,v);
 				else{
 					res="Invalid Syntax of Create File Command";
@@ -167,7 +168,8 @@ void commandMode(const char*  path){
 				
 				break;
 		case 4: //Create Folder 
-				if(v.size()==3)
+		        v[2]=realtiveToAbsolute(v[2]);
+				if(v.size()==3 && v[2].find(root) != string::npos)
 				res=createFolder(path,v);
 				else{
 					res="Invalid Syntax of Create Folder Command";
@@ -176,22 +178,27 @@ void commandMode(const char*  path){
 				break;
 		case 5: //Remove File
 				formatChanging(v);
-				if(v.size()==3)
+				v[1]=realtiveToAbsolute(v[1]);
+				if(v.size()==3 && v[1].find(root) != string::npos)
 				res=removeFile(path,v);
 				else{
 					res="Invalid Path";
 				}
 				break;				 		
 		case 6: //Remove Folder
+				
 				formatChanging(v);
-				if(v.size()==3)
+				v[1]=realtiveToAbsolute(v[1]);
+				if(v.size()==3 && v[1].find(root) != string::npos)
 				res=removeFolder(path,v);
 				else{
 					res="Invalid Path";
 				}
 				break;
 		case 7: //goto
-				if (v[1].find(root) != string::npos) {
+				v[1]=realtiveToAbsolute(v[1]);
+				DIR *dir;
+				if (v[1].find(root) != string::npos && opendir(v[1].c_str())!=NULL) {
 				back_dir.push(string(realpath(cwd,NULL)));
 				path =v[1].c_str();	
 				strcpy(cwd,v[1].c_str()); 
@@ -210,7 +217,8 @@ void commandMode(const char*  path){
 				searchFlag=0;
 				break;
 		case 9: //Snapshot
-				if(v.size()==3){
+				v[1]=realtiveToAbsolute(v[1]);
+				if(v.size()==3 && v[1].find(root) != string::npos ){
 				string strSnap="";
 				if(printSnapShot(v[1].c_str(),strSnap)){
 				snapFile(v[1].c_str(),strSnap,v[2]);
@@ -219,6 +227,7 @@ void commandMode(const char*  path){
 				else{
 					res="Folder Doesnot exists";
 				}
+
 				}
 				else{
 					res="Invalid Syntax for Snapshot Command";
@@ -268,7 +277,6 @@ void mouse(const char* cwd){
 	int top=0, end, end_mouse=console_size-4;
 	int et=console_size-4;
 	end=ent.size();
-	//cout << "\x1B["<<console_size-1<<";1H"<<root;
 	
 	cout << "\x1B[1;1H";
 
@@ -322,33 +330,16 @@ void mouse(const char* cwd){
 		}
 		if(c==':'){
 			commandMode(cwd);
-		//	cout << "\x1B[2J\033[;H";
-			//ent.resize(0);
-			//gotoloc(cwd,ent);
-			//top=0;
-			//end_mouse-1=0;
 			prints(ent,cwd,top,end_mouse-1,console_width);
 		}
 		if(c==127){
-			//char cwd_forward[PATH_MAX];
-			//getcwd(cwd_forward,PATH_MAX);	
-			//string cur=string(cwd_forward);
-			
-			//cout<<root;
-			//cout<<"\x1B["<<console_size-4<<";1H";
-			//cout<<realpath(cwd,NULL)<<" "<<root;
 			if(root.compare(realpath(cwd,NULL))!=0){
 			back_dir.push(string(realpath(cwd,NULL)));	
 			cout << "\x1B[2J\033[;H";
 			cout << "\x1B[1;1H";	
  			mouse((string(cwd)+"/"+"..").c_str());}
- 			/*else{
- 				mouse(root.c_str());
- 			}*/
-		}
+ 		}
 		if(c==68 && back_dir.size()>1 ){
-			//cout<<"back";
-			//cout<<back_dir.size();
 			string s1=back_dir.top();
 			s1=realpath(s1.c_str(),NULL);
 			forward_dir.push(cwd);
